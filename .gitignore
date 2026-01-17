@@ -1,0 +1,10 @@
+# Ignore data and orders
+data/
+orders/
+
+# Ignore site output
+site/*
+# Ignore Python cache files
+__pycache__/
+*.pyc
+.ipynb_checkpoints
