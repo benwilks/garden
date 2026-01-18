@@ -64,7 +64,12 @@ SCHEDULE_HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
 
     <div class="links">
-        <a href="garden_guide.html">Back to Garden Guide</a>
+        <a href="garden_guide.html">Back to Garden Guide</a> |
+        <strong>Resources:</strong> 
+        <a href="wiki/pests.html">Pest Control</a> | 
+        <a href="wiki/tomato_pruning.html">Tomato Pruning</a> | 
+        <a href="wiki/fertilizers.html">Fertilizers</a> | 
+        <a href="wiki/tool_care.html">Tool Care</a>
     </div>
 
     <h1>Somerville Garden Schedule 2026</h1>
