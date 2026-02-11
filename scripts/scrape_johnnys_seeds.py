@@ -173,27 +173,51 @@ def scrape_johnnys_precise(url):
 
 def main():
     parser = argparse.ArgumentParser(description='Scrape Johnny\'s Seeds data from order history.')
-    parser.add_argument('history_file', help='Path to the order history HTML file')
-    parser.add_argument('output_csv', help='Path to the output CSV file')
+    parser.add_argument('input_path', nargs='?', default='orders', help='Path to the order history HTML file or directory (default: orders)')
+    parser.add_argument('output_csv', nargs='?', default='data/garden_seeds.csv', help='Path to the output CSV file (default: data/garden_seeds.csv)')
     parser.add_argument('--overwrite', action='store_true', help='Overwrite existing data even if URL is already scraped')
     parser.add_argument('--limit', type=int, help='Limit the number of items to process')
     
     args = parser.parse_args()
     
-    print(f"Reading order history from {args.history_file}...")
-    try:
-        urls = extract_urls_from_history(args.history_file)
-    except Exception as e:
-        print(f"Error reading history file: {e}")
+    # Determine input files
+    html_files = []
+    if os.path.isdir(args.input_path):
+        for root, dirs, files in os.walk(args.input_path):
+            for file in files:
+                if file.lower().endswith('.html'):
+                    html_files.append(os.path.join(root, file))
+    elif os.path.isfile(args.input_path):
+        html_files.append(args.input_path)
+    else:
+        print(f"Error: Input path '{args.input_path}' not found.")
         return
 
-    print(f"Found {len(urls)} unique product URLs.")
+    if not html_files:
+        print(f"No HTML files found in {args.input_path}")
+        return
+
+    print(f"Processing {len(html_files)} order history files...")
+    all_urls = set()
+    for html_file in html_files:
+        print(f"  Reading {html_file}...")
+        try:
+            file_urls = extract_urls_from_history(html_file)
+            all_urls.update(file_urls)
+        except Exception as e:
+            print(f"  Error reading {html_file}: {e}")
+
+    urls = list(all_urls)
+    print(f"Found {len(urls)} unique product URLs across all files.")
     
     # Load existing data to check for duplicates
     existing_urls = set()
-    if os.path.exists(args.output_csv) and not args.overwrite:
+    # Create output directory if it doesn't exist
+    os.makedirs(os.path.dirname(args.output_csv), exist_ok=True)
+    
+    if os.path.exists(args.output_csv):
         try:
-            df_existing = pd.read_csv(args.output_csv)
+            df_existing = pd.read_csv(args.output_csv, encoding='utf-8')
             if 'URL' in df_existing.columns:
                 existing_urls = set(df_existing['URL'].tolist())
             print(f"Resuming from {args.output_csv}. {len(existing_urls)} items already scraped.")
@@ -201,13 +225,15 @@ def main():
             print(f"Warning: Could not read existing CSV: {e}")
 
     print("Scraping product data...")
+    scraped_count = 0
+    
     for i, url in enumerate(urls):
-        if args.limit and i >= args.limit:
-            print(f"Reached limit of {args.limit} items.")
+        if args.limit and scraped_count >= args.limit:
+            print(f"Reached limit of {args.limit} scraped items.")
             break
 
         if url in existing_urls and not args.overwrite:
-            print(f"[{i+1}/{len(urls)}] Skipping (already scraped): {url}")
+            # Silent skip or maybe just log if verbose, but let's keep it clean
             continue
 
         print(f"[{i+1}/{len(urls)}] Scraping {url}...")
@@ -218,14 +244,32 @@ def main():
             
             # Iterative Save
             df_new = pd.DataFrame([res])
-            header = not os.path.exists(args.output_csv)
-            df_new.to_csv(args.output_csv, mode='a', header=header, index=False)
+            # Check if header is needed (file doesn't exist or is empty)
+            header = not os.path.exists(args.output_csv) or os.stat(args.output_csv).st_size == 0
+            df_new.to_csv(args.output_csv, mode='a', header=header, index=False, encoding='utf-8')
+            scraped_count += 1
+            
+            # Add to existing urls so we don't try to scrape it again if there are duplicates in the list somehow
+            existing_urls.add(url)
         else:
             print(f"  Failed to scrape {url}")
         
         time.sleep(2) # Respectful delay
 
-    print(f"Done! Data saved to {args.output_csv}")
+    print(f"Scraping complete! Data saved to {args.output_csv}")
+    
+    # Trigger Site Generation
+    print("\nStarting site generation...")
+    import subprocess
+    try:
+        generate_script = os.path.join(os.path.dirname(__file__), 'generate_garden_data.py')
+        result = subprocess.run([sys.executable, generate_script, args.output_csv], check=True)
+        if result.returncode == 0:
+            print("Site generation successful!")
+        else:
+            print("Site generation failed.")
+    except Exception as e:
+        print(f"Error running site generation: {e}")
 
 if __name__ == "__main__":
     main()

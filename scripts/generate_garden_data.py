@@ -31,7 +31,9 @@ CROP_DEFAULTS = {
     "Carrot":   {"offset": -14, "type": "Direct Sow", "weeks_indoor_min": 0, "weeks_indoor_max": 0},
     "Radish":   {"offset": -28, "type": "Direct Sow", "weeks_indoor_min": 0, "weeks_indoor_max": 0},
     "Turnip":   {"offset": -21, "type": "Direct Sow", "weeks_indoor_min": 0, "weeks_indoor_max": 0},
+    "Beet":     {"offset": -28, "type": "Direct Sow", "weeks_indoor_min": 0, "weeks_indoor_max": 0},
     "Onion":    {"offset": -28, "type": "Transplant", "weeks_indoor_min": 10, "weeks_indoor_max": 12},
+    "Shallot":  {"offset": -28, "type": "Transplant", "weeks_indoor_min": 10, "weeks_indoor_max": 12},
     "Leek":     {"offset": -28, "type": "Transplant", "weeks_indoor_min": 10, "weeks_indoor_max": 12},
     "Flower":   {"offset": 7, "type": "Transplant", "weeks_indoor_min": 4, "weeks_indoor_max": 6},
     "Herb":     {"offset": 0, "type": "Transplant", "weeks_indoor_min": 6, "weeks_indoor_max": 8},
@@ -188,15 +190,17 @@ def identify_crop_type(name):
     if "lettuce" in name: return "Lettuce"
     if "kale" in name: return "Kale"
     if "spinach" in name: return "Spinach"
-    if "pea" in name: return "Pea"
     if "bean" in name: return "Bean"
     if "carrot" in name: return "Carrot"
     if "radish" in name: return "Radish"
     if "turnip" in name: return "Turnip"
+    if "beet" in name: return "Beet"
     if "onion" in name or "chive" in name: return "Onion"
+    if "shallot" in name: return "Shallot"
     if "leek" in name: return "Leek"
+    if "pea" in name: return "Pea"
     if "dill" in name or "parsley" in name or "cilantro" in name or "thyme" in name or "mint" in name or "sage" in name or "oregano" in name or "lavender" in name or "shiso" in name: return "Herb"
-    if "zinnia" in name or "marigold" in name or "sunflower" in name or "nasturtium" in name or "dahlia" in name or "echinacea" in name: return "Flower"
+    if "zinnia" in name or "marigold" in name or "sunflower" in name or "nasturtium" in name or "dahlia" in name or "echinacea" in name or "calendula" in name: return "Flower"
     return "Other"
 
 def parse_growing_info(text):
@@ -350,7 +354,7 @@ def main():
         return
 
     print(f"Reading data from {args.input_csv}...")
-    df = pd.read_csv(args.input_csv)
+    df = pd.read_csv(args.input_csv, encoding='utf-8')
     
     grouped = {}
     schedule_data = []
@@ -411,7 +415,7 @@ def main():
     # Generate HTML Files
     for crop, items in grouped.items():
         filename = f"{OUTPUT_DIR}/{crop.lower()}.html"
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding='utf-8') as f:
             f.write(f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -516,13 +520,13 @@ def main():
             f.write("</body></html>")
 
     # Save Schedule Data
-    with open(SCHEDULE_JSON, "w") as f:
-        json.dump(schedule_data, f, indent=2)
+    with open(SCHEDULE_JSON, "w", encoding='utf-8') as f:
+        json.dump(schedule_data, f, indent=2, ensure_ascii=False)
 
     # Save Schedule HTML
-    json_str = json.dumps(schedule_data, indent=2)
+    json_str = json.dumps(schedule_data, indent=2, ensure_ascii=False)
     html_content = SCHEDULE_HTML_TEMPLATE.replace("__DATA_PLACEHOLDER__", json_str)
-    with open(SCHEDULE_HTML, "w") as f:
+    with open(SCHEDULE_HTML, "w", encoding='utf-8') as f:
         f.write(html_content)
 
     print(f"Generated {len(grouped)} crop HTML files, schedule data, and schedule.html.")

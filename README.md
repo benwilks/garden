@@ -27,26 +27,35 @@ pip install pandas beautifulsoup4 requests
 4. Save the page as HTML (Right-click -> Save As -> Webpage, Complete/HTML Only) into the `orders/` directory. 
    - Example: `orders/2025-12_order-history.html`
 
-### 2. Scrape Seed Data
+### 2. Scrape Seed Data & Generate Site
 
-Run the scraper to extract product URLs from your order history and download detailed growing information + images.
+Run the scraper to extract product URLs from your order history files and download detailed growing information + images. This will automatically process all `.html` files in the specified directory (default: `orders/`), scrape any new items, and then generate the website.
 
 ```bash
-python scripts/scrape_johnnys_seeds.py orders/<your-order-file>.html data/<output-name>.csv [options]
+python scripts/scrape_johnnys_seeds.py [input_path] [output_csv] [options]
 ```
+
+Arguments:
+- `input_path`: Path to an individual HTML file or a directory containing HTML files. (Default: `orders/`)
+- `output_csv`: Path to the output CSV file. New data will be appended. (Default: `data/garden_seeds.csv`)
 
 Options:
 - `--overwrite`: Overwrite existing data for URLs that have already been scraped. (Default: Skip existing)
 - `--limit N`: Scrape only N items (useful for testing).
 
-Example:
+**Example (Process all orders and append to existing 2026 data):**
 ```bash
-python scripts/scrape_johnnys_seeds.py orders/2025-12_order-history.html data/2026-garden-seeds.csv
+python scripts/scrape_johnnys_seeds.py orders/ data/2026-garden-seeds.csv
 ```
 
-### 3. Generate Garden Website
+**Example (Default behavior):**
+```bash
+python scripts/scrape_johnnys_seeds.py
+```
 
-Generate the scheduling and guide HTML files using the scraped data.
+### 3. (Optional) Manually Generate Garden Website
+
+The scraper automatically triggers site generation, but you can also run it manually if needed:
 
 ```bash
 python scripts/generate_garden_data.py data/<output-name>.csv
